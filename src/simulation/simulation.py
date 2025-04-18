@@ -4,6 +4,11 @@ import pygame
 
 from common.constants import WIDTH, HEIGHT, NUM_AGENTS, GROUP_SIZE_MIN, GROUP_SIZE_MAX
 from agents.group import Group
+from devices.anemometer import Anemometer
+from devices.infrared_flame_detector import InfraredFlameDetector
+from devices.smoke_detector import SmokeDetector
+from devices.thermometer import Thermometer
+from messages.messaging_service import MessagingService
 from simulation.simulation_zone import SimulationZone
 from agents.agent import Agent
 from common.utils import random_point_in_rect, draw_label_centered
@@ -16,9 +21,11 @@ class Simulation:
         pygame.display.set_caption("Simulador de Conciertos - POO")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 24)
-        self.agents = []  # Lista de todos los agentes
-        self.groups = []  # Lista de todos los grupos
+        self.agents = []
+        self.groups = []
+        self.devices = []
         self.next_group_id = 0
+        self.create_devices()
         self.create_groups_and_agents(NUM_AGENTS)
         self.running = True
 
@@ -48,12 +55,33 @@ class Simulation:
                 group.add_member(agent, is_leader, offset)
             remaining -= group_size
 
+    def create_devices(self):
+        self.devices.append(Thermometer("Termómetro"))
+        self.devices.append(Anemometer("Anemometro"))
+        self.devices.append(InfraredFlameDetector("Detector de llama (Baño Izquierda)"))
+        self.devices.append(InfraredFlameDetector("Detector de llama (Baño Derecha)"))
+        self.devices.append(InfraredFlameDetector("Detector de llama (Bar Izquierda)"))
+        self.devices.append(InfraredFlameDetector("Detector de llama (Bar Derecha)"))
+        self.devices.append(SmokeDetector("Detector de humo (Baño Izquierda)"))
+        self.devices.append(SmokeDetector("Detector de humo (Baño Derecha)"))
+        self.devices.append(SmokeDetector("Detector de humo (Bar Izquierda)"))
+        self.devices.append(SmokeDetector("Detector de humo (Bar Derecha)"))
+
     def run(self):
+        msg_service = MessagingService()
+        message_send_indicator = 0
+
         while self.running:
-            self.clock.tick(60)
+
+            self.clock.tick(30)
             self.handle_events()
             self.update()
             self.draw()
+            if message_send_indicator == 30:
+                self.send_info(msg_service)
+                message_send_indicator = 0
+            else:
+                message_send_indicator += 1
         pygame.quit()
 
     def handle_events(self):
@@ -98,3 +126,20 @@ class Simulation:
         for agent in self.agents:
             agent.draw(self.screen)
         pygame.display.flip()
+
+    def send_info(self, msg_service):
+        message = dict()
+
+        for device in self.devices:
+            result = msg_service.send_message(device.take_measure(), "devices")
+            if result == 1:
+                break
+
+        for agent in self.agents:
+            message["user_id"] = agent.id
+            message["lat"] = agent.pos.x
+            message["lon"] = agent.pos.y
+            message["height"] = 5
+            result = msg_service.send_message(message, "users-info")
+            if result == 1:
+                break

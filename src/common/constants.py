@@ -7,7 +7,7 @@ SIDE_ZONE_TOTAL_HEIGHT = HEIGHT - STAGE_HEIGHT
 HALF_SIDE_ZONE = SIDE_ZONE_TOTAL_HEIGHT // 2  # Para dividir zonas laterales en dos (baño y bar)
 
 # Parámetros de comportamiento y grupos
-NUM_AGENTS = 3000
+NUM_AGENTS = 300
 GROUP_SIZE_MIN = 1
 GROUP_SIZE_MAX = 5
 

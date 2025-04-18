@@ -9,7 +9,12 @@ from common.utils import random_point_in_rect
 
 
 class Agent:
+    id = 0
+
     def __init__(self, pos, group, is_leader=False, group_offset=pygame.Vector2(0, 0)):
+        Agent.id += 1
+        self.id = Agent.id
+
         self.pos = pygame.Vector2(pos)
         self.radius = 2
         self.color = (0, 0, 255)  # Azul
