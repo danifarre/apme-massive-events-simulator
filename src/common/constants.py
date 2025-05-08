@@ -7,9 +7,9 @@ SIDE_ZONE_TOTAL_HEIGHT = HEIGHT - STAGE_HEIGHT
 HALF_SIDE_ZONE = SIDE_ZONE_TOTAL_HEIGHT // 2  # Para dividir zonas laterales en dos (baño y bar)
 
 # Parámetros de comportamiento y grupos
-NUM_AGENTS = 300
-GROUP_SIZE_MIN = 1
-GROUP_SIZE_MAX = 5
+NUM_AGENTS = 3000
+GROUP_SIZE_MIN = 3
+GROUP_SIZE_MAX = 10
 
 # Probabilidad de que un grupo en la pista decida ir al baño o bar en cada frame
 PROB_GROUP_MOVE = 0.001

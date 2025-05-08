@@ -71,7 +71,7 @@ class Agent:
         # Si el grupo está en la pista, el líder decide mover al grupo
         if self.state == "pista":
             if random.random() < PROB_GROUP_MOVE:
-                if random.random() < 0.5:
+                if random.random() < 0.35:
                     self.state = "yendo_bano"
                     self.destination = random_point_in_rect(random.choice(SimulationZone.zone_bathrooms))
                 else:

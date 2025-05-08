@@ -1,4 +1,5 @@
 import random
+from datetime import datetime, timezone
 
 import pygame
 
@@ -18,7 +19,7 @@ class Simulation:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Simulador de Conciertos - POO")
+        pygame.display.set_caption("Simulador de Conciertos")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 24)
         self.agents = []
@@ -57,7 +58,7 @@ class Simulation:
 
     def create_devices(self):
         self.devices.append(Thermometer("Termómetro"))
-        self.devices.append(Anemometer("Anemometro"))
+        self.devices.append(Anemometer("Anemómetro"))
         self.devices.append(InfraredFlameDetector("Detector de llama (Baño Izquierda)"))
         self.devices.append(InfraredFlameDetector("Detector de llama (Baño Derecha)"))
         self.devices.append(InfraredFlameDetector("Detector de llama (Bar Izquierda)"))
@@ -139,7 +140,9 @@ class Simulation:
             message["user_id"] = agent.id
             message["lat"] = agent.pos.x
             message["lon"] = agent.pos.y
-            message["height"] = 5
+            message["height"] = 5.0 if agent.id is not 100 else 1.0
+            message["speed"] = 1.0 if agent.id is not 100 else 5.0
+            message["timestamp"] = datetime.now(timezone.utc).isoformat()
             result = msg_service.send_message(message, "users-info")
             if result == 1:
                 break
