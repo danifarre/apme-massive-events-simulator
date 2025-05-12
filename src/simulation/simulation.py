@@ -1,5 +1,6 @@
 import random
 from datetime import datetime, timezone
+import threading
 
 import pygame
 
@@ -29,6 +30,38 @@ class Simulation:
         self.create_devices()
         self.create_groups_and_agents(NUM_AGENTS)
         self.running = True
+        self.evacuate_zone = False
+        self.flame_detector = True
+        self.devices_firing = False
+        self.fall = False
+
+        threading.Thread(target=self.listen_terminal_input, daemon=True).start()
+
+    def listen_terminal_input(self):
+        while True:
+            user_input = input("Introduce 1 para evacuar la zona marcada, 0 para volver a permitir el acceso\n"
+                               "Introduce 2 para apagar un detector de llama, 3 para volver a encenderlo\n"
+                               "Introduce 4 para que se disparen los detectores de humo y llama, 5 para volver a valores normales\n"
+                               "Introduce 6 para simular la caída de un asistente, 7 para que se levante\n"
+                               "Entrada: ").strip()
+            if user_input == "1":
+                self.evacuate_zone = True
+                print("Activada evacuación de la zona crítica.")
+            elif user_input == "0":
+                self.evacuate_zone = False
+                print("Desactivada evacuación. Los agentes pueden volver a entrar.")
+            elif user_input == "2":
+                self.flame_detector = False
+                print("Desactivada detector de llama.")
+            elif user_input == "3":
+                self.flame_detector = True
+                print("Activada detector de llama.")
+            elif user_input == "6":
+                self.fall = True
+                print("Caída de asistente.")
+            elif user_input == "7":
+                self.fall = False
+                print("El asistente se levanta.")
 
     def create_groups_and_agents(self, num_agents):
         remaining = num_agents
@@ -94,6 +127,28 @@ class Simulation:
         for agent in self.agents:
             agent.update()
 
+        critical_zone = pygame.Rect(
+            SimulationZone.zone_crowd.right - 300,  # más ancho
+            SimulationZone.zone_crowd.top,  # parte superior
+            300,  # ancho ampliado
+            180  # alto ampliado
+        )
+
+        safe_zone = pygame.Rect(
+            SimulationZone.zone_crowd.right - 200,
+            SimulationZone.zone_crowd.bottom - 100,
+            180,
+            80
+        )
+
+        if self.evacuate_zone:
+            for group in self.groups:
+                leader = group.leader
+                if leader and critical_zone.collidepoint(leader.pos.x, leader.pos.y):
+                    if group.state == "pista":
+                        group.state = "vuelve_pista"
+                        group.destination = random_point_in_rect(safe_zone)
+
     def draw(self):
         self.screen.fill((255, 255, 255))  # Fondo blanco
 
@@ -123,6 +178,15 @@ class Simulation:
         draw_label_centered(self.screen, "Bar (Der)", SimulationZone.zone_bar_right, self.font)
         draw_label_centered(self.screen, "Pista", SimulationZone.zone_crowd, self.font)
 
+        critical_zone = pygame.Rect(
+            SimulationZone.zone_crowd.right - 300,  # más ancho
+            SimulationZone.zone_crowd.top,  # parte superior
+            300,  # ancho ampliado
+            180  # alto ampliado
+        )
+
+        pygame.draw.rect(self.screen, (255, 0, 0), critical_zone, 2)
+
         # Dibujar agentes
         for agent in self.agents:
             agent.draw(self.screen)
@@ -132,7 +196,18 @@ class Simulation:
         message = dict()
 
         for device in self.devices:
-            result = msg_service.send_message(device.take_measure(), "devices")
+            if self.flame_detector is False:
+                if device.get_device_name() != "Detector de llama (Bar Izquierda)":
+                    result = msg_service.send_message(device.take_measure(), "devices")
+                else:
+                    result = 0
+            elif self.devices_firing is True:
+                if "Bar Derecha" in device.get_device_name():
+                    result = msg_service.send_message(device.take_measure(1), "devices")
+                else:
+                    result = msg_service.send_message(device.take_measure(), "devices")
+            else:
+                result = msg_service.send_message(device.take_measure(), "devices")
             if result == 1:
                 break
 
@@ -140,8 +215,8 @@ class Simulation:
             message["user_id"] = agent.id
             message["lat"] = agent.pos.x
             message["lon"] = agent.pos.y
-            message["height"] = 5.0 if agent.id is not 100 else 1.0
-            message["speed"] = 1.0 if agent.id is not 100 else 5.0
+            message["height"] = 1.0 if self.fall is True and agent.id == 50 else 5.0
+            message["speed"] = 5.0 if self.fall is True and agent.id == 50 else 1.0
             message["timestamp"] = datetime.now(timezone.utc).isoformat()
             result = msg_service.send_message(message, "users-info")
             if result == 1:

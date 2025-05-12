@@ -9,5 +9,5 @@ class SmokeDetector(Device):
     def __init__(self, name):
         super().__init__("smoke_detector", name)
 
-    def take_measure(self):
-        return self._format_measure(0)
+    def take_measure(self, measurement=0):
+        return self._format_measure(measurement)

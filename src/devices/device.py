@@ -15,6 +15,9 @@ class Device:
             "timestamp": time.time_ns()
         }
 
+    def get_device_name(self):
+        return self._name
+
     def get_device_type(self):
         return self._device_type
 
